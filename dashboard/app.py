@@ -25,6 +25,20 @@ except Exception:
 
 st.divider()
 
+st.subheader(" Active Alerts")
+
+try:
+    alerts = requests.get(f"{API_BASE}/alerts", timeout=5).json()
+
+    if alerts["alert_count"] == 0:
+        st.success("No active alerts")
+    else:
+        for alert in alerts["active_alerts"]:
+            st.warning(alert)
+except Exception:
+    st.error("Alerts service unavailable")
+
+
 # FAILURE BREAKDOWN
 st.subheader(" Failure Reason Breakdown")
 

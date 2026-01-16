@@ -85,5 +85,24 @@ def fraud_insights():
         "low_value_fraud_cases": len(fraud[fraud["amount"] <= 5000])
     })
 
+from backend.alerts import evaluate_alerts
+
+@app.route("/alerts")
+def alerts():
+    metrics_data = {
+        "failure_rate_pct": round((df["status"] == "failed").mean() * 100, 2),
+        "fraud_rate_pct": round((df["fraud_flag"] == 1).mean() * 100, 2),
+        "avg_refund_time_hrs": round(
+            df[df["refund_time_hrs"] > 0]["refund_time_hrs"].mean(), 2
+        )
+    }
+
+    alerts = evaluate_alerts(metrics_data)
+
+    return jsonify({
+        "active_alerts": alerts,
+        "alert_count": len(alerts)
+    })
+
 if __name__ == "__main__":
     app.run(debug=Config.DEBUG)
