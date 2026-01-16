@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 
-API_BASE = "http://127.0.0.1:5000"
+API_BASE = "https://smart-payments-backend.onrender.com"
 
 st.set_page_config(page_title="Smart Payments Intelligence", layout="wide")
 st.title(" Smart Payments Intelligence Platform")
