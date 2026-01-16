@@ -10,7 +10,9 @@ app = Flask(__name__)
 # LOAD DATA & MODELS 
 logger.info("Loading data and models...")
 
-df = pd.read_csv(Config.DATA_PATH)
+from backend.database import engine
+
+df = pd.read_sql("SELECT * FROM payments", engine)
 failure_model = joblib.load(Config.FAILURE_MODEL_PATH)
 fraud_model = joblib.load(Config.FRAUD_MODEL_PATH)
 
