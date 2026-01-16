@@ -5,60 +5,74 @@ import requests
 API_BASE = "http://127.0.0.1:5000"
 
 st.set_page_config(page_title="Smart Payments Intelligence", layout="wide")
-
 st.title(" Smart Payments Intelligence Platform")
 
-# -------------------- KPIs --------------------
+# KPIs
 st.subheader(" Payment KPIs")
 
-metrics = requests.get(f"{API_BASE}/metrics").json()
+try:
+    metrics = requests.get(f"{API_BASE}/metrics", timeout=5).json()
 
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("Total Txns", metrics["total_transactions"])
-c2.metric("Success %", metrics["success_rate_pct"])
-c3.metric("Failure %", metrics["failure_rate_pct"])
-c4.metric("Pending %", metrics["pending_rate_pct"])
-c5.metric("Fraud %", metrics["fraud_rate_pct"])
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Total Txns", metrics["total_transactions"])
+    c2.metric("Success %", metrics["success_rate_pct"])
+    c3.metric("Failure %", metrics["failure_rate_pct"])
+    c4.metric("Pending %", metrics["pending_rate_pct"])
+    c5.metric("Fraud %", metrics["fraud_rate_pct"])
+except Exception:
+    st.error(" Metrics API not available")
+    st.stop()
 
 st.divider()
 
-# -------------------- FAILURE BREAKDOWN --------------------
+# FAILURE BREAKDOWN
 st.subheader(" Failure Reason Breakdown")
 
-failures = requests.get(f"{API_BASE}/failures/breakdown").json()
-failure_df = pd.DataFrame(
-    list(failures["failure_reason_breakdown"].items()),
-    columns=["Reason", "Count"]
-)
+try:
+    failures = requests.get(f"{API_BASE}/failures/breakdown", timeout=5).json()
 
-st.bar_chart(failure_df.set_index("Reason"))
+    failure_df = pd.DataFrame(
+        list(failures.items()),
+        columns=["Reason", "Count"]
+    )
+    st.bar_chart(failure_df.set_index("Reason"))
+except Exception:
+    st.error("Failure breakdown API not available")
 
 st.divider()
 
-# -------------------- HOURLY FAILURES --------------------
+# HOURLY FAILURES 
 st.subheader(" Hourly Failure Distribution")
 
-hourly = requests.get(f"{API_BASE}/failures/hourly").json()
-hourly_df = pd.DataFrame(
-    list(hourly["hourly_failure_distribution"].items()),
-    columns=["Hour", "Failures"]
-).sort_values("Hour")
+try:
+    hourly = requests.get(f"{API_BASE}/failures/hourly", timeout=5).json()
 
-st.line_chart(hourly_df.set_index("Hour"))
+    hourly_df = pd.DataFrame(
+        list(hourly.items()),
+        columns=["Hour", "Failures"]
+    ).astype({"Hour": int}).sort_values("Hour")
+
+    st.line_chart(hourly_df.set_index("Hour"))
+except Exception:
+    st.error("Hourly failure API not available")
 
 st.divider()
 
-# -------------------- FRAUD INSIGHTS --------------------
+# FRAUD INSIGHTS 
 st.subheader(" Fraud Insights")
 
-fraud = requests.get(f"{API_BASE}/fraud/insights").json()
-st.write(f"**Total Fraud Cases:** {fraud['total_fraud_cases']}")
-st.write(f"**High Value Fraud (>5000):** {fraud['high_value_fraud_cases']}")
-st.write(f"**Low Value Fraud (≤5000):** {fraud['low_value_fraud_cases']}")
+try:
+    fraud = requests.get(f"{API_BASE}/fraud/insights", timeout=5).json()
+
+    st.write(f"**Total Fraud Cases:** {fraud['total_fraud_cases']}")
+    st.write(f"**High Value Fraud (>5000):** {fraud['high_value_fraud_cases']}")
+    st.write(f"**Low Value Fraud (≤5000):** {fraud['low_value_fraud_cases']}")
+except Exception:
+    st.error("Fraud insights API not available")
 
 st.divider()
 
-# -------------------- ML PREDICTION --------------------
+# ML PREDICTION
 st.subheader(" Predict Transaction Risk")
 
 with st.form("predict_form"):
@@ -68,13 +82,20 @@ with st.form("predict_form"):
     submitted = st.form_submit_button("Predict Risk")
 
     if submitted:
-        payload = {
-            "amount": amount,
-            "hour_of_day": hour,
-            "refund_time_hrs": refund_time
-        }
-        response = requests.post(f"{API_BASE}/predict", json=payload).json()
+        try:
+            payload = {
+                "amount": amount,
+                "hour_of_day": hour,
+                "refund_time_hrs": refund_time
+            }
+            response = requests.post(
+                f"{API_BASE}/predict",
+                json=payload,
+                timeout=5
+            ).json()
 
-        st.success("Prediction Results")
-        st.write(f"**Failure Probability:** {response['failure_probability']}")
-        st.write(f"**Fraud Probability:** {response['fraud_probability']}")
+            st.success("Prediction Results")
+            st.write(f"**Failure Probability:** {response['failure_probability']}")
+            st.write(f"**Fraud Probability:** {response['fraud_probability']}")
+        except Exception:
+            st.error("Prediction API not available")
